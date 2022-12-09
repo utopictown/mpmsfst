@@ -1,0 +1,68 @@
+services:
+  gateway:
+    build: ./gateway
+    restart: always
+    hostname: gateway
+    env_file:
+      - .env
+    ports:
+      - ${MAIN_PORT}:${MAIN_PORT}
+    networks:
+      - backend
+    links:
+      - product
+      - order
+      - auth
+    depends_on:
+      - product
+      - order
+      - auth
+  product:
+    build: ./product
+    restart: always
+    hostname: product
+    env_file:
+      - .env
+    networks:
+      - backend
+    depends_on:
+      - mysql
+  order:
+    build: ./order
+    restart: always
+    hostname: order
+    env_file:
+      - .env
+    networks:
+      - backend
+    depends_on:
+      - mysql
+  auth:
+    build: ./auth
+    restart: always
+    hostname: auth
+    ports:
+      - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
+    env_file:
+      - .env
+    networks:
+      - backend
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+      - 33060:33060
+    container_name: mysql-mpmsfst
+    volumes:
+      - ./db-backup:/var/lib/mysql
+      - ./db-entrypoint/:/docker-entrypoint-initdb.d/
+    networks:
+      - backend
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+networks:
+  backend:
+    driver: bridge
